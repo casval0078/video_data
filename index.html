@@ -74,29 +74,33 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
 
-    function login() {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      
-      if (email && password) {
-        db.collection('users').add({
-          email: email,
-          password: password,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        })
-        .then(() => {
-          alert('データが保存されました');
-          window.location.href = 'home.html';
-        })
-        .catch(error => {
-          alert('エラーが発生しました: ' + error);
-        });
-      } else {
-        alert('メールアドレスとパスワードを入力してください');
-      }
+// Firebase Firestoreを初期化
+document.addEventListener('DOMContentLoaded', () => {
+  const db = firebase.firestore();
+
+  window.login = function() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    if (email && password) {
+      db.collection('users').add({
+        email: email,
+        password: password,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      })
+      .then(() => {
+        alert('データが保存されました');
+        window.location.href = 'home.html';
+      })
+      .catch(error => {
+        alert('エラーが発生しました: ' + error);
+      });
+    } else {
+      alert('メールアドレスとパスワードを入力してください');
     }
+  }
+});
   </script>
 </body>
 </html>
