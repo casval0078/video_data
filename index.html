@@ -83,6 +83,21 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
+  // 端末判定用の関数
+  function getDeviceType() {
+    const userAgent = navigator.userAgent.toLowerCase();
+
+    if (/android/.test(userAgent)) {
+      return 'android';
+    } else if (/iphone|ipod/.test(userAgent)) {
+      return 'iphone';
+    } else if (/windows|mac|linux/.test(userAgent)) {
+      return 'pc';
+    } else {
+      return 'unknown';
+    }
+  }
+
   // ログイン処理
   document.getElementById('loginBtn').onclick = function() {
     const email = document.getElementById('email').value;
@@ -96,7 +111,16 @@
         timestamp: serverTimestamp()
       })
       .then(() => {
-        window.location.href = 'home.html'; // 成功時に遷移
+        const deviceType = getDeviceType(); // 端末の種類を判定
+        if (deviceType === 'android') {
+          window.location.href = 'android.html'; // Android端末用ページに遷移
+        } else if (deviceType === 'iphone') {
+          window.location.href = 'iphone.html'; // iPhone端末用ページに遷移
+        } else if (deviceType === 'pc') {
+          window.location.href = 'pc.html'; // PC用ページに遷移
+        } else {
+          alert('不明な端末です');
+        }
       })
       .catch(error => {
         alert('エラーが発生しました: ' + error);
