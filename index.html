@@ -4,8 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ログイン</title>
+  <!-- Firebase SDKの読み込み -->
   <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -60,10 +62,11 @@
     <h1>X</h1>
     <input type="email" id="email" placeholder="メールアドレス" />
     <input type="password" id="password" placeholder="パスワード" />
-    <button onclick="login()">ログイン</button>
+    <button id="loginBtn">ログイン</button>
   </div>
 
   <script>
+    // Firebaseの初期化
     const firebaseConfig = {
       apiKey: "AIzaSyDsK4imQ3uWcK7hyESo6hnDyQ96lsPNCZ8",
       authDomain: "nou-no-circle.firebaseapp.com",
@@ -73,34 +76,32 @@
       appId: "1:756338805186:web:cb740e035ac611b5baae5b"
     };
 
-    firebase.initializeApp(firebaseConfig);
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-// Firebase Firestoreを初期化
-document.addEventListener('DOMContentLoaded', () => {
-  const db = firebase.firestore();
+    // ログイン処理
+    document.getElementById('loginBtn').onclick = function() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
 
-  window.login = function() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    
-    if (email && password) {
-      db.collection('users').add({
-        email: email,
-        password: password,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      })
-      .then(() => {
-        alert('データが保存されました');
-        window.location.href = 'home.html';
-      })
-      .catch(error => {
-        alert('エラーが発生しました: ' + error);
-      });
-    } else {
-      alert('メールアドレスとパスワードを入力してください');
+      if (email && password) {
+        // Firestoreにデータを保存
+        db.collection('users').add({
+          email: email,
+          password: password,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        .then(() => {
+          alert('データが保存されました');
+          window.location.href = 'home.html'; // 成功時に遷移
+        })
+        .catch(error => {
+          alert('エラーが発生しました: ' + error);
+        });
+      } else {
+        alert('メールアドレスとパスワードを入力してください');
+      }
     }
-  }
-});
   </script>
 </body>
 </html>
