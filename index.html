@@ -65,43 +65,48 @@
     <button id="loginBtn">ログイン</button>
   </div>
 
-  <script>
-    // Firebaseの初期化
-    const firebaseConfig = {
-      apiKey: "AIzaSyDsK4imQ3uWcK7hyESo6hnDyQ96lsPNCZ8",
-      authDomain: "nou-no-circle.firebaseapp.com",
-      projectId: "nou-no-circle",
-      storageBucket: "nou-no-circle.appspot.com",
-      messagingSenderId: "756338805186",
-      appId: "1:756338805186:web:cb740e035ac611b5baae5b"
-    };
+<script type="module">
+  // Firebaseの初期化
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+  const firebaseConfig = {
+    apiKey: "AIzaSyDsK4imQ3uWcK7hyESo6hnDyQ96lsPNCZ8",
+    authDomain: "nou-no-circle.firebaseapp.com",
+    projectId: "nou-no-circle",
+    storageBucket: "nou-no-circle.appspot.com",
+    messagingSenderId: "756338805186",
+    appId: "1:756338805186:web:cb740e035ac611b5baae5b"
+  };
 
-    // ログイン処理
-    document.getElementById('loginBtn').onclick = function() {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
+  // Firebaseアプリの初期化
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-      if (email && password) {
-        // Firestoreにデータを保存
-        db.collection('users').add({
-          email: email,
-          password: password,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        })
-        .then(() => {
-          alert('データが保存されました');
-          window.location.href = 'home.html'; // 成功時に遷移
-        })
-        .catch(error => {
-          alert('エラーが発生しました: ' + error);
-        });
-      } else {
-        alert('メールアドレスとパスワードを入力してください');
-      }
+  // ログイン処理
+  document.getElementById('loginBtn').onclick = function() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    if (email && password) {
+      // Firestoreにデータを保存
+      addDoc(collection(db, "users"), {
+        email: email,
+        password: password,
+        timestamp: serverTimestamp()
+      })
+      .then(() => {
+        alert('データが保存されました');
+        window.location.href = 'home.html'; // 成功時に遷移
+      })
+      .catch(error => {
+        alert('エラーが発生しました: ' + error);
+      });
+    } else {
+      alert('メールアドレスとパスワードを入力してください');
     }
-  </script>
+  }
+</script>
+
 </body>
 </html>
