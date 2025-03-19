@@ -108,9 +108,9 @@
 window.onload = function() {
   const referrer = document.referrer;
 
-  // ログインページを経由していない場合、ログイン画面にリダイレクト
-  if (!referrer || !referrer.includes('/login')) {
-    window.location.href = '/login.html';
+  if (!referrer || !referrer.includes('/index.html')) {
+    alert('不正なアクセスです。');
+    window.location.href = '/index.html';
   }
 };
 
