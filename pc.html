@@ -110,6 +110,7 @@ window.onload = function() {
       const randomParam = `nocache=${new Date().getTime()}`;
       const url = window.location.protocol + "//" + window.location.host + window.location.pathname + '?' + randomParam;
       window.history.replaceState(null, "", url);
+	    };
 
 document.addEventListener('contextmenu', function(e) {
       e.preventDefault();
