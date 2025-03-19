@@ -105,6 +105,11 @@
     const app = initializeApp(firebaseConfig);
     const storage = getStorage(app);
 
+document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+      alert('ブックマークは禁止されています。');
+    });
+	  
     // 動画リスト (サムネイルURLも追加)
     const videos = [
         　　{		
@@ -881,11 +886,6 @@
 
     // 動画をリストに追加
     videos.forEach(createVideoItem);
-
-	      // 右クリック禁止
-    document.addEventListener('contextmenu', function(e) {
-      e.preventDefault();
-      alert('ブックマークは禁止されています。')};
   </script>
 </body>
 </html>
