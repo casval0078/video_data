@@ -106,11 +106,14 @@
     const storage = getStorage(app);
 
 window.onload = function() {
-      // ブックマーク対策用にランダムなクエリパラメータを付与
-      const randomParam = `nocache=${new Date().getTime()}`;
-      const url = window.location.protocol + "//" + window.location.host + window.location.pathname + '?' + randomParam;
-      window.history.replaceState(null, "", url);
-	    };
+  const currentUrl = new URL(window.location.href);
+  if (!currentUrl.searchParams.has('random')) {
+    const randomValue = Math.random().toString(36).substring(2);
+    currentUrl.searchParams.set('random', randomValue);
+    window.location.replace(currentUrl.href);
+  }
+};
+
 
 document.addEventListener('contextmenu', function(e) {
       e.preventDefault();
