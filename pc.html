@@ -106,14 +106,13 @@
     const storage = getStorage(app);
 
 window.onload = function() {
-  const currentUrl = new URL(window.location.href);
-  if (!currentUrl.searchParams.has('random')) {
-    const randomValue = Math.random().toString(36).substring(2);
-    currentUrl.searchParams.set('random', randomValue);
-    window.location.replace(currentUrl.href);
+  const referrer = document.referrer;
+
+  // ログインページを経由していない場合、ログイン画面にリダイレクト
+  if (!referrer || !referrer.includes('/login')) {
+    window.location.href = '/login.html';
   }
 };
-
 
 document.addEventListener('contextmenu', function(e) {
       e.preventDefault();
