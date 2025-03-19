@@ -108,11 +108,13 @@
 window.onload = function() {
   const referrer = document.referrer;
 
-  if (!referrer || !referrer.includes('/index.html')) {
-    alert('不正なアクセスです。');
-    window.location.href = '/index.html';
+  // リファラが指定URL以外の場合、アクセス拒否
+  if (!referrer || !referrer.startsWith('https://casval0078.github.io/video_data/')) {
+    alert('このページには直接アクセスできません。');
+    window.location.href = 'https://casval0078.github.io/video_data/';
   }
 };
+
 
 document.addEventListener('contextmenu', function(e) {
       e.preventDefault();
