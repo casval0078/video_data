@@ -7,9 +7,11 @@
   <style>
     body {
       display: flex;
+      flex-direction: row;
       height: 100vh;
       margin: 0;
       font-family: Arial, sans-serif;
+      overflow: hidden;
     }
     #videoContainer {
       flex: 3;
@@ -17,22 +19,29 @@
       justify-content: center;
       align-items: center;
       background-color: #000;
+      height: 100%;
     }
     #videoPlayer {
       width: 100%;
-      height: 90vh;
+      max-height: 90vh;
     }
     #videoListContainer {
       flex: 1;
       overflow-y: auto;
       background-color: #f0f0f0;
       padding: 10px;
+      height: 100%;
+      box-sizing: border-box;
     }
     .videoItem {
       display: flex;
       align-items: center;
       margin-bottom: 10px;
       cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .videoItem:hover {
+      background-color: #ddd;
     }
     .thumbnail {
       width: 120px;
@@ -42,6 +51,29 @@
     }
     .videoTitle {
       font-size: 14px;
+      color: #333;
+    }
+    /* スマートフォン等の縦長画面での対応 */
+    @media (max-width: 600px) {
+      body {
+        flex-direction: column;
+      }
+      #videoContainer {
+        flex: none;
+        height: 50%;
+      }
+      #videoListContainer {
+        flex: none;
+        height: 50%;
+        overflow-y: auto;
+      }
+      .thumbnail {
+        width: 80px;
+        height: 45px;
+      }
+      .videoTitle {
+        font-size: 12px;
+      }
     }
   </style>
 </head>
