@@ -881,6 +881,11 @@
 
     // 動画をリストに追加
     videos.forEach(createVideoItem);
+
+	      // 右クリック禁止
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+      alert('ブックマークは禁止されています。');
   </script>
 </body>
 </html>
