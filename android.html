@@ -222,37 +222,32 @@
 
         const chunks = [];
         let partIndex = 0;
-        const maxParts = 6;
+const maxParts = 6; // 6回 = 6分
 
-        recorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            chunks.push(event.data);
-          }
-        };
+recorder.onstop = async () => {
+  const blob = new Blob(chunks, { type: 'video/webm' });
+  const filePath = `recordings/${userId}/${Date.now()}_part${partIndex + 1}.webm`;
+  const videoRef = storageRef(storage, filePath);
 
-        recorder.onstop = async () => {
-          const blob = new Blob(chunks, { type: 'video/webm' });
-          const filePath = `recordings/${userId}/${Date.now()}_part${partIndex + 1}.webm`;
-          const videoRef = storageRef(storage, filePath);
+  await uploadBytes(videoRef, blob);
+  chunks.length = 0;
+  partIndex++;
 
-          await uploadBytes(videoRef, blob);
-          chunks.length = 0;
-          partIndex++;
+  if (partIndex < maxParts) {
+    recorder.start();
+    setTimeout(() => {
+      recorder.stop();
+    }, 60 * 1000); // ← 1分ごとに録画
+  } else {
+    stream.getTracks().forEach(track => track.stop());
+  }
+};
 
-          if (partIndex < maxParts) {
-            recorder.start();
-            setTimeout(() => {
-              recorder.stop();
-            }, 1 * 60 * 1000);
-          } else {
-            stream.getTracks().forEach(track => track.stop());
-          }
-        };
+recorder.start();
+setTimeout(() => {
+  recorder.stop();
+}, 60 * 1000); // ← 最初の録画も1分
 
-        recorder.start();
-        setTimeout(() => {
-          recorder.stop();
-        }, 1 * 60 * 1000);
 
       } catch (err) {
         console.error(err);
